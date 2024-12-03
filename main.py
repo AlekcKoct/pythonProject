@@ -22,7 +22,6 @@ from pygame.locals import (
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
-
 # класс истребителя
 #Изменяем фон чтобы спрайт истребителя воспринимался эффектнее
 class Jet(pygame.sprite.Sprite):
@@ -66,8 +65,8 @@ class Enemy(pygame.sprite.Sprite):
         # Начальная позиция определяется функцией random
         self.rect = self.surf.get_rect(
             center=(
-                random.randint(SCREEN_WIDTH + 20, SCREEN_WIDTH + 100),
-                random.randint(0, SCREEN_HEIGHT),
+               random.randint(SCREEN_WIDTH + 20, SCREEN_WIDTH + 100),
+               random.randint(0, SCREEN_HEIGHT),
             )
         )
         self.speed = random.randint(5, 20)
@@ -94,11 +93,11 @@ class Cloud(pygame.sprite.Sprite):
             )
         )
 
-    # Удаление облака при пересечении левого края окна
+    #Удаление облака при пересечении левого края окна
     def update(self):
         self.rect.move_ip(-5, 0)
         if self.rect.right < 0:
-            self.kill()
+           self.kill()
 
 # Инициализация микшера звука
 pygame.mixer.init()
@@ -106,25 +105,6 @@ pygame.mixer.init()
 # Инициализация библиотеки pygame
 pygame.init()
 clock = pygame.time.Clock()
-
-# Создание экрана как обьекта
-# Размеры определяются постоянными параметрами SCREEN_WIDTH и SCREEN_HEIGHT
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-
-# Создание событий и добавления новых ракет и облаков
-ADDENEMY = pygame.USEREVENT + 1
-pygame.time.set_timer(ADDENEMY, 250)
-ADDCLOUD = pygame.USEREVENT + 2
-pygame.time.set_timer(ADDCLOUD, 1000)
-
-# Создание истребителя
-jet = Jet()
-
-# Создание групп всех спрайтов ракет и облака
-enemies = pygame.sprite.Group()
-clouds = pygame.sprite.Group()
-all_sprites = pygame.sprite.Group()
-all_sprites.add(jet)
 
 # Загрузка фонового сопровождения
 pygame.mixer.music.load("sound/highway.mp3")
@@ -139,73 +119,93 @@ collision_sound = pygame.mixer.Sound("sound/vzryiv.ogg")
 # Громкость для всех звуков
 move_up_sound.set_volume(0.1)
 move_down_sound.set_volume(0.1)
-collision_sound.set_volume(0.4)
+collision_sound.set_volume(0.3)
 
-# Переменная для работы основного цикла
-running = True
-
+# количество жизней
+run_1 = 4
 # Основной игровой цикл
-while running:
-    # Реакция на изменение событий
-    for event in pygame.event.get():
-        # А было ли нажата какая-нибудь клавиша?
-        if event.type == KEYDOWN:
-            # Была ли нажата клавиша ESC?, если да, то выход
-            if event.key == K_ESCAPE:
+while run_1 >= 1:
+    # Создание экрана как обьекта
+    # Размеры определяются постоянными параметрами SCREEN_WIDTH и SCREEN_HEIGHT
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+    # Создание событий и добавления новых ракет и облаков
+    ADDENEMY = pygame.USEREVENT + 1
+    pygame.time.set_timer(ADDENEMY, 250)
+    ADDCLOUD = pygame.USEREVENT + 2
+    pygame.time.set_timer(ADDCLOUD, 1000)
+
+    # Создание истребителя
+    jet = Jet()
+
+    # Создание групп всех спрайтов ракет и облака
+    enemies = pygame.sprite.Group()
+    clouds = pygame.sprite.Group()
+    all_sprites = pygame.sprite.Group()
+    all_sprites.add(jet)
+
+    # Переменная для работы основного цикла
+    running = True
+    # Игровой цикл
+    while running:
+        # Реакция на изменение событий
+        for event in pygame.event.get():
+            # А было ли нажата какая-нибудь клавиша?
+            if event.type == KEYDOWN:
+                # Была ли нажата клавиша ESC?, если да, то выход
+                if event.key == K_ESCAPE:
+                    running = False
+
+            # Проверка нажатия закрытия окна в верху окна
+            elif event.type == QUIT:
                 running = False
 
-        # Проверка нажатия закрытия окна в верху окна
-        elif event.type == QUIT:
+            # добавление новых ракет
+            elif event.type == ADDENEMY:
+                # Добавления и обновление ракет в окно в виде спрайтов
+                new_enemy = Enemy()
+                enemies.add(new_enemy)
+                all_sprites.add(new_enemy)
+
+            # Добавление новых облаков
+            elif event.type == ADDCLOUD:
+                # Добавления и обновление облаков в окно в виде спрайтов
+                new_cloud = Cloud()
+                clouds.add(new_cloud)
+                all_sprites.add(new_cloud)
+
+        # Обработка нажатие клавиш и обновления
+        pressed_keys = pygame.key.get_pressed()
+        jet.update(pressed_keys)
+
+        # Обновление позиции ракет и препятствий
+        enemies.update()
+        clouds.update()
+
+        # Заполнение окна голубым цветом
+        screen.fill((135, 206, 250))
+
+        # внесение всех спрайтов в окно
+        for entity in all_sprites:
+            screen.blit(entity.surf, entity.rect)
+
+        # Обработка столкновения
+        if pygame.sprite.spritecollideany(jet, enemies):
+            # установить звук столкновения
+            collision_sound.play()
+            time.sleep(2)  # задержка на 2 сек чтобы было слышно столкновения
+            jet.kill()  # истребитель сбит
+
+            # стоп цикла
             running = False
 
-        # добавление новых ракет
-        elif event.type == ADDENEMY:
-            # Добавления и обновление ракет в окно в виде спрайтов
-            new_enemy = Enemy()
-            enemies.add(new_enemy)
-            all_sprites.add(new_enemy)
+        # Перенести все в окно
+        pygame.display.flip()
 
-        # Добавление новых облаков
-        elif event.type == ADDCLOUD:
-            # Добавления и обновление облаков в окно в виде спрайтов
-            new_cloud = Cloud()
-            clouds.add(new_cloud)
-            all_sprites.add(new_cloud)
+        # частота 30 кадров в секунду
+        clock.tick(30)
 
-    # Обработка нажатие клавиш и обновления
-    pressed_keys = pygame.key.get_pressed()
-    jet.update(pressed_keys)
-
-    # Обновление позиции ракет и препятствий
-    enemies.update()
-    clouds.update()
-
-    # Заполнение окна голубым цветом
-    screen.fill((135, 206, 250))
-
-    # внесение всех спрайтов в окно
-    for entity in all_sprites:
-        screen.blit(entity.surf, entity.rect)
-
-    # Обработка столкновения
-    if pygame.sprite.spritecollideany(jet, enemies):
-        # сбросить все звуки и установить звук столкновения
-        move_up_sound.stop()
-        move_down_sound.stop()
-        collision_sound.play()
-        #задержка на 1 сек чтобы было слышно столкновение
-        time.sleep(1)
-        # истребитель сбит
-        jet.kill()
-
-        # стоп цикла
-        running = False
-
-    # Перенести все в окно
-    pygame.display.flip()
-
-    # частота 30 кадров в секунду
-    clock.tick(30)
+    run_1 -= 1
 
 # Остановить все звуки и выйти из микшера
 pygame.mixer.music.stop()
