@@ -19,8 +19,8 @@ from pygame.locals import (
     )
 
 # Определение высоты и ширины окна
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1200
+SCREEN_HEIGHT = 800
 
 # класс истребителя
 #Изменяем фон чтобы спрайт истребителя воспринимался эффектнее
@@ -28,8 +28,11 @@ class Jet(pygame.sprite.Sprite):
     def __init__(self):
         super(Jet, self).__init__()
         self.surf = pygame.image.load("image/plane.png").convert()
+        self.surf = pygame.transform.scale(self.surf, (75, 30))
         self.surf.set_colorkey((255, 255, 255), RLEACCEL)
         self.rect = self.surf.get_rect()
+        self.rect.x = 15
+        self.rect.y = 250
 
     # Перемещение истребителя при нажатии определенной кнопки
     def update(self, pressed_keys):
@@ -40,22 +43,25 @@ class Jet(pygame.sprite.Sprite):
             self.rect.move_ip(0, 5)
             move_down_sound.play()
         if pressed_keys[K_LEFT]:
-            self.rect.move_ip(-5, 0)
+            self.rect.move_ip(-1, 0)
         if pressed_keys[K_RIGHT]:
-            self.rect.move_ip(5, 0)
+            self.rect.move_ip(7, 0)
 
         # Чтобы держать истребителя в зоне окна
         if self.rect.left < 0:
             self.rect.left = 0
-        elif self.rect.right > SCREEN_WIDTH:
-            self.rect.right = SCREEN_WIDTH
+        #elif self.rect.right > SCREEN_WIDTH:
+        #   self.rect.right = SCREEN_WIDTH
+        #    end_r()
+
+         #   #print("Истребитель достиг правого края экрана!")  # Вывод сообщения в консоль
+
         if self.rect.top <= 0:
             self.rect.top = 0
         elif self.rect.bottom >= SCREEN_HEIGHT:
             self.rect.bottom = SCREEN_HEIGHT
 
-
-# Определяем класс ракет
+        # Определяем класс ракет
 # Изменяем фон чтобы ракеты воспринимались эффектнее
 class Enemy(pygame.sprite.Sprite):
     def __init__(self):
@@ -65,16 +71,17 @@ class Enemy(pygame.sprite.Sprite):
         # Начальная позиция определяется функцией random
         self.rect = self.surf.get_rect(
             center=(
-               random.randint(SCREEN_WIDTH + 20, SCREEN_WIDTH + 100),
-               random.randint(0, SCREEN_HEIGHT),
+               random.randint(0, SCREEN_WIDTH),
+               random.randint(SCREEN_HEIGHT + 20, SCREEN_HEIGHT + 150),
             )
         )
-        self.speed = random.randint(5, 20)
+        self.speed = random.randint(8, 25)
 
     # Удаление ракет при пересечении левого края окна
     def update(self):
-        self.rect.move_ip(-self.speed, 0)
-        if self.rect.right < 0:
+        self.rect.y -= 15
+        #self.rect.move_ip((-self.speed, 0))
+        if self.rect.bottom < 0:
             self.kill()
 
 
@@ -120,18 +127,30 @@ collision_sound = pygame.mixer.Sound("sound/vzryiv.ogg")
 move_up_sound.set_volume(0.1)
 move_down_sound.set_volume(0.1)
 collision_sound.set_volume(0.3)
-
+life_img = pygame.image.load("image/heart.png")
+life_img = pygame.transform.scale(life_img, (20,20))
 # количество жизней
-run_1 = 4
+run_1 = 5
+def show_hearth():
+    global run_1
+    show = 0
+    x = 5
+    while show != run_1:
+        screen.blit(life_img, (x, 5))
+        x += 20
+        show += 1
 # Основной игровой цикл
 while run_1 >= 1:
     # Создание экрана как обьекта
     # Размеры определяются постоянными параметрами SCREEN_WIDTH и SCREEN_HEIGHT
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption('  My Game')
+    img = pygame.image.load("image/plane.png")
+    pygame.display.set_icon(img)
 
     # Создание событий и добавления новых ракет и облаков
     ADDENEMY = pygame.USEREVENT + 1
-    pygame.time.set_timer(ADDENEMY, 250)
+    pygame.time.set_timer(ADDENEMY, 200)
     ADDCLOUD = pygame.USEREVENT + 2
     pygame.time.set_timer(ADDCLOUD, 1000)
 
@@ -144,8 +163,9 @@ while run_1 >= 1:
     all_sprites = pygame.sprite.Group()
     all_sprites.add(jet)
 
-    # Переменная для работы основного цикла
     running = True
+    # Переменная для работы основного цикла
+    #running = True
     # Игровой цикл
     while running:
         # Реакция на изменение событий
@@ -158,6 +178,7 @@ while run_1 >= 1:
 
             # Проверка нажатия закрытия окна в верху окна
             elif event.type == QUIT:
+                run_1 = 0
                 running = False
 
             # добавление новых ракет
@@ -174,9 +195,15 @@ while run_1 >= 1:
                 clouds.add(new_cloud)
                 all_sprites.add(new_cloud)
 
-        # Обработка нажатие клавиш и обновления
+        # обработка нажатие клавиш и обновления
         pressed_keys = pygame.key.get_pressed()
         jet.update(pressed_keys)
+
+        # Проверка на достижение правого края окна
+        if jet.rect.right > SCREEN_WIDTH:
+            time.sleep(2)
+            run_1 += 2
+            running = False  # Устанавливаем флаг для выхода из цикла
 
         # Обновление позиции ракет и препятствий
         enemies.update()
@@ -198,12 +225,12 @@ while run_1 >= 1:
 
             # стоп цикла
             running = False
-
+        show_hearth()
         # Перенести все в окно
         pygame.display.flip()
 
         # частота 30 кадров в секунду
-        clock.tick(30)
+        clock.tick(40)
 
     run_1 -= 1
 
