@@ -50,12 +50,7 @@ class Jet(pygame.sprite.Sprite):
         # Чтобы держать истребителя в зоне окна
         if self.rect.left < 0:
             self.rect.left = 0
-        #elif self.rect.right > SCREEN_WIDTH:
-        #   self.rect.right = SCREEN_WIDTH
-        #    end_r()
-
-         #   #print("Истребитель достиг правого края экрана!")  # Вывод сообщения в консоль
-
+       
         if self.rect.top <= 0:
             self.rect.top = 0
         elif self.rect.bottom >= SCREEN_HEIGHT:
